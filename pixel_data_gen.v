@@ -35,14 +35,12 @@ always @(posedge tx_pixel_clk) begin
                                                 DLEN[31:24],
                                                 DTYPE
                                             };
-        // else if (x > 4 && y > 0) set <= 1;
         else if (ext) begin
             temp_val <= 64'hDD;
             ext <= 0;
             k <= 0;
         end
-        else if (k < DLEN) begin
-            // while (k < DLEN) begin
+        else if (k <= DLEN) begin
             if (DLEN - k == REM) begin
                 if (REM == 5) begin
                     temp_val <= (64'hAA << REM*8) | (data[(DLEN*8) - 1 -: (REM*8)]);
@@ -60,7 +58,6 @@ always @(posedge tx_pixel_clk) begin
                 temp_val <= data[k*8 +: 48];
             
             k <= k + 6; 
-            // end
         end
         else begin
             temp_val <= 64'h00;
@@ -71,7 +68,6 @@ always @(posedge tx_pixel_clk) begin
         temp_val <= 64'h00;
         busy <= 0;
     end
-    // cnt <= cnt + 1;
 end
 
 assign pixel_value = temp_val;
