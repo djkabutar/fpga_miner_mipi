@@ -129,11 +129,11 @@ module top (
         .my_mipi_rx_ULPS(mipi_rx_ULPS)
     );
     
-    mipi_tx #(.DLEN(DLEN))(
+    mipi_tx #(.DLEN(5))(
         .tx_pixel_clk(tx_pixel_clk),
         .tx_vga_clk(tx_vga_clk),
         .data_available(data_valid),
-        .pix_gen_data("potato"),
+        .pix_gen_data("dilav"),
         .rst_n(rst_n),
             
         .my_mipi_tx_DPHY_RSTN(mipi_tx_DPHY_RSTN),

@@ -23,39 +23,37 @@ module mipi_rx #(parameter DLEN = 512)(
 	input         my_mipi_rx_ULPS_CLK,
 	input [3:0]   my_mipi_rx_ULPS,
 
-    output[DLEN-1:0] data,
-    output        data_valid
+    output[(DLEN*8)-1:0] data,
+    output reg    data_valid
 );
 
 assign my_mipi_rx_DPHY_RSTN = 1'b1;
 assign my_mipi_rx_RSTN = 1'b1;
 assign my_mipi_rx_CLEAR = 1'b0;
-assign my_mipi_rx_LANES = 2'b01;         // 2 lanes
+assign my_mipi_rx_LANES = 2'b11;         // 2 lanes
 assign my_mipi_rx_VC_ENA = 4'b0001;      // Virtual Channel enable
 
-reg led_val;
+always @(posedge rx_pixel_clk) begin
+    if (my_mipi_rx_DATA[47:0] == 48'h7e7e7e7e7e7e) data_valid <= 1'b1;
+    // else data_valid <= 1'b0;
+end
 
-// always @(posedge rx_pixel_clk) begin
-//     if (my_mipi_rx_DATA[47:0] == 48'ha0b0c0a0b0c0 || my_mipi_rx_DATA[47:0] == 48'h9fafbf9fafbf) led_val <= 1'b1;
-//     else led_val <= 1'b0;
-// end
-
-verify_mipi_receiver verify(
-    .packet(my_mipi_rx_DATA[47:0]),
-    .rx_pixel_clk(rx_pixel_clk),
-    .data(data),
-    .data_valid(data_valid)
-);
+// verify_mipi_receiver verify(
+//     .packet(my_mipi_rx_DATA[47:0]),
+//     .rx_pixel_clk(rx_pixel_clk),
+//     .data(data),
+//     .data_valid(data_valid)
+// );
 
 udg udg_inst(
     .clk(uart_clk), 
     .rst(rst_n),
     .fifo_we(my_mipi_rx_VALID),
-	 .data_in(my_mipi_rx_DATA),
-	 .tx(uart_inst)
+	.data_in(my_mipi_rx_DATA),
+	.tx(uart_inst)
 );
 
-assign led = led_val;
+assign led = data_valid;
 
 endmodule
 
@@ -63,7 +61,7 @@ endmodule
 module mipi_tx #(parameter DLEN = 512)(
     input         tx_pixel_clk,
     input         tx_vga_clk,
-    input         data_available,
+    input        data_available,
     input[(DLEN*8)-1:0] pix_gen_data,
     input         rst_n,
 
@@ -142,7 +140,7 @@ pixel_data_gen #(.DLEN(DLEN)) (
     .data(pix_gen_data),
     .x(x),
     .y(y),
-    .data_available(1'b1),
+    .data_available(data_available),
     .busy(busy),
     .tx_pixel_clk(tx_pixel_clk),
     .pixel_value(pixel_data)
