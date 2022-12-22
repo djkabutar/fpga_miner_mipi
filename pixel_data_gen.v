@@ -20,7 +20,7 @@ reg set;
 reg ext;
 
 always @(posedge tx_pixel_clk) begin
-    if (data_available) begin
+    // if (data_available) begin
         if (x < 1 && y < 2) begin 
             temp_val <= 64'h01000000FFEA;
             k <= 0;
@@ -39,8 +39,9 @@ always @(posedge tx_pixel_clk) begin
             temp_val <= 64'hDD;
             ext <= 0;
             k <= 0;
+            busy <= 0;
         end
-        else if (k <= DLEN) begin
+        else if (k <= DLEN & busy) begin
             if (DLEN - k == REM) begin
                 if (REM == 5) begin
                     temp_val <= (64'hAA << REM*8) | (data[(DLEN*8) - 1 -: (REM*8)]);
@@ -63,11 +64,11 @@ always @(posedge tx_pixel_clk) begin
             temp_val <= 64'h00;
             busy <= 0;
         end
-    end
-    else begin
-        temp_val <= 64'h00;
-        busy <= 0;
-    end
+    // end
+    // else begin
+    //     temp_val <= 64'h00;
+    //     busy <= 0;
+    // end
 end
 
 assign pixel_value = temp_val;
