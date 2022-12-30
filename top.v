@@ -20,8 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module top (
-    input hash_clk, 
-    input RxD,
+    input hash_clk,
     
     input         tx_pixel_clk,
     input         tx_vga_clk,
@@ -65,6 +64,7 @@ module top (
 	output        mipi_tx_ULPS_CLK_ENTER,
 	output        mipi_tx_ULPS_CLK_EXIT, 
     output        TxD,
+    output        RxD,
     output        led3,
     output        led2,
     output        tx_hs,
@@ -83,7 +83,7 @@ module top (
 	//
 	// Valid range: [0, 5]
 	parameter LOOP_LOG2 = 5;
-    parameter DLEN = 6;
+    parameter DLEN = 18;
 
 	// No need to adjust these parameters
 	localparam [5:0] LOOP = (6'd1 << LOOP_LOG2);
@@ -98,10 +98,11 @@ module top (
     assign tx_hs = mipi_tx_HSYNC;
     assign tx_vs = mipi_tx_VSYNC;
     assign uart_clk = mipi_rx_cal_clk;
+    assign TxD = mipi_rx_VALID;
 
-    wire [511:0] received_data;
-    wire data_valid;    
-    assign TxD = ~data_valid;
+    wire [(DLEN*8)-1:0] received_data;
+    wire data_valid, data_available;
+    wire tx_busy;
 
     mipi_rx #(.DLEN(DLEN))(
         .rx_pixel_clk(rx_pixel_clk),
@@ -111,6 +112,8 @@ module top (
         .led(led2),
         .data(received_data),
         .data_valid(data_valid),
+        .data_available(data_available),
+        .tx_busy(tx_busy),
         
         .my_mipi_rx_DPHY_RSTN(mipi_rx_DPHY_RSTN),
         .my_mipi_rx_RSTN(mipi_rx_RSTN),
@@ -129,12 +132,14 @@ module top (
         .my_mipi_rx_ULPS(mipi_rx_ULPS)
     );
     
-    mipi_tx #(.DLEN(5))(
+    mipi_tx #(.DLEN(DLEN))(
         .tx_pixel_clk(tx_pixel_clk),
         .tx_vga_clk(tx_vga_clk),
-        .data_available(data_valid),
-        .pix_gen_data("dilav"),
+        .data_available(data_available),
+        .pix_gen_data(received_data),
         .rst_n(rst_n),
+        .led1(RxD),
+        .busy(tx_busy),
             
         .my_mipi_tx_DPHY_RSTN(mipi_tx_DPHY_RSTN),
         .my_mipi_tx_RSTN(mipi_tx_RSTN),

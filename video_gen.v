@@ -15,14 +15,15 @@ module video_gen (
  output reg [9:0] x,y
 );
 
-parameter syncPulse_h= 128;            
-parameter backPorch_h= 88;             
-parameter activeVideo_h= 800;            
-parameter frontPorch_h= 40;            
-parameter syncPulse_v= 4;              
-parameter backPorch_v = 23;             
-parameter activeVideo_v = 600;            
-parameter frontPorch_v = 1;
+parameter syncPulse_h= 80;            
+parameter backPorch_h= 50;             
+parameter activeVideo_h= 640;            
+parameter frontPorch_h= 50; 
+           
+parameter syncPulse_v= 80;              
+parameter backPorch_v = 5;             
+parameter activeVideo_v = 480;            
+parameter frontPorch_v = 5;
 
 localparam total_h = syncPulse_h + backPorch_h + activeVideo_h + frontPorch_h;
 localparam total_v = syncPulse_v + backPorch_v + activeVideo_v + frontPorch_v;

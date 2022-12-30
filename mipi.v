@@ -1,7 +1,8 @@
-module mipi_rx #(parameter DLEN = 512)(
+module mipi_rx #(parameter DLEN = 6)(
     input         rx_pixel_clk,
     input         rst_n,
     input         uart_clk,
+    input         tx_busy,
     output        led,
     output        uart_inst,
 
@@ -23,27 +24,62 @@ module mipi_rx #(parameter DLEN = 512)(
 	input         my_mipi_rx_ULPS_CLK,
 	input [3:0]   my_mipi_rx_ULPS,
 
-    output[(DLEN*8)-1:0] data,
-    output reg    data_valid
+    output [(DLEN*8)-1:0] data,
+    output        data_valid,
+    output        data_available
 );
 
 assign my_mipi_rx_DPHY_RSTN = 1'b1;
 assign my_mipi_rx_RSTN = 1'b1;
 assign my_mipi_rx_CLEAR = 1'b0;
-assign my_mipi_rx_LANES = 2'b11;         // 2 lanes
+assign my_mipi_rx_LANES = 2'b11;         // 4 lanes
 assign my_mipi_rx_VC_ENA = 4'b0001;      // Virtual Channel enable
 
-always @(posedge rx_pixel_clk) begin
-    if (my_mipi_rx_DATA[47:0] == 48'h7e7e7e7e7e7e) data_valid <= 1'b1;
-    // else data_valid <= 1'b0;
-end
+reg [15:0] cnt;
+reg state;
 
-// verify_mipi_receiver verify(
-//     .packet(my_mipi_rx_DATA[47:0]),
-//     .rx_pixel_clk(rx_pixel_clk),
-//     .data(data),
-//     .data_valid(data_valid)
-// );
+// always @(posedge rx_pixel_clk) begin
+//     // if (my_mipi_rx_DATA[47:0] == 48'h7e7e7e7e7e7e) data_available <= 1'b1;
+//     // // else if (!tx_busy & data_valid) data_valid <= 1'b1;
+//     // // else if (tx_busy) <= 1'b0;
+//     // else data_available <= 1'b0;
+//     case (state)
+//         0: begin
+//             data_available <= 0;
+//             if (my_mipi_rx_VALID & !tx_busy) begin
+//                 // data <= (data << 48) | my_mipi_rx_DATA[47:0];
+//                 data <= my_mipi_rx_DATA[47:0]
+//                     | (data << 48);
+//                 state <= 1;
+//             end
+//         end
+//         1: begin
+//             data_available <= 1;
+//             // cnt <= 0;
+//             state <= 0;
+//         end
+//         default: 
+//             state <= 0;
+//     endcase
+
+//     if (my_mipi_rx_VALID) begin
+//         cnt <= cnt + 1;
+//     end
+//     else begin
+//         cnt <= 0;
+//     end
+    
+//     // else data_available <= 1'b0;
+// end
+
+verify_mipi_receiver #(.DLEN(DLEN))(
+    .packet(my_mipi_rx_DATA[47:0]),
+    .rx_pixel_clk(rx_pixel_clk),
+    .data(data),
+    .my_mipi_rx_VALID(my_mipi_rx_VALID),
+    .data_valid(data_valid),
+    .data_available(data_available)
+);
 
 udg udg_inst(
     .clk(uart_clk), 
@@ -53,7 +89,7 @@ udg udg_inst(
 	.tx(uart_inst)
 );
 
-assign led = data_valid;
+assign led = data_available;
 
 endmodule
 
@@ -61,9 +97,11 @@ endmodule
 module mipi_tx #(parameter DLEN = 512)(
     input         tx_pixel_clk,
     input         tx_vga_clk,
-    input        data_available,
+    input         data_available,
     input[(DLEN*8)-1:0] pix_gen_data,
     input         rst_n,
+    output        busy,
+    output        led1,
 
 /* Signals used by the MIPI TX Interface Designer instance */
 	    
@@ -114,7 +152,7 @@ video_gen #(.syncPulse_h (syncPulse_h),
             .activeVideo_v (activeVideo_v),
             .frontPorch_v (frontPorch_v)
             ) patgen (
-                    .rst (~rst_n),
+                    .rst (~busy),
                     .clk (tx_vga_clk),
                     .video_pattern (video_pattern),
                     .video_valid_h_o (valid_h_patgen),
@@ -133,10 +171,13 @@ video_gen #(.syncPulse_h (syncPulse_h),
 
 wire [63:0] pixel_data;
 // reg [(DLEN*8)-1:0] pix_gen_data = "god yzal eht revo spmuj xof nworb kciuq eht";
-wire busy;
+// wire busy;
 reg [26:0] cnt;
 
-pixel_data_gen #(.DLEN(DLEN)) (
+pixel_data_gen #(.DLEN(DLEN),
+    .activeVideo_h(activeVideo_h),
+    .activeVideo_v(activeVideo_v)
+) (
     .data(pix_gen_data),
     .x(x),
     .y(y),
@@ -150,9 +191,10 @@ pixel_data_gen #(.DLEN(DLEN)) (
 // assign pixel_data = (x < 2 && y < 2) ? 64'h01000000FFEA : 64'h204F4C4C4548; 
                    // (x == 2 && y == 0) ? 64'h010004000000 :
                    // (x == 4 && y == 0) ? 64'h43484152AADD : 64'h000000000000;
+assign led1 = busy;
                     
-assign my_mipi_tx_DPHY_RSTN = 1'b1;
-assign my_mipi_tx_RSTN = 1'b1;
+assign my_mipi_tx_DPHY_RSTN = data_available | busy;
+assign my_mipi_tx_RSTN = data_available | busy;
 assign my_mipi_tx_VALID = valid_h_patgen;
 assign my_mipi_tx_HSYNC = hsync_patgen;//hsync_patgen_PC;
 assign my_mipi_tx_VSYNC = vsync_patgen;//vsync_patgen_PC;
