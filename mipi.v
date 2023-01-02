@@ -98,6 +98,7 @@ module mipi_tx #(parameter DLEN = 512)(
     input         tx_pixel_clk,
     input         tx_vga_clk,
     input         data_available,
+    input         write_enable,
     input[(DLEN*8)-1:0] pix_gen_data,
     input         rst_n,
     output        busy,
@@ -173,16 +174,19 @@ wire [63:0] pixel_data;
 // reg [(DLEN*8)-1:0] pix_gen_data = "god yzal eht revo spmuj xof nworb kciuq eht";
 // wire busy;
 reg [26:0] cnt;
+wire send_confirmation;
 
 pixel_data_gen #(.DLEN(DLEN),
     .activeVideo_h(activeVideo_h),
     .activeVideo_v(activeVideo_v)
 ) (
-    .data(pix_gen_data),
+    .data(send_confirmation ? "dilav": pix_gen_data),
     .x(x),
     .y(y),
+    .pix_flag(send_confirmation),
     .data_available(data_available),
     .busy(busy),
+    .write_enable(write_enable),
     .tx_pixel_clk(tx_pixel_clk),
     .pixel_value(pixel_data)
 );

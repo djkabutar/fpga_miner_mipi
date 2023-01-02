@@ -83,7 +83,7 @@ module top (
 	//
 	// Valid range: [0, 5]
 	parameter LOOP_LOG2 = 5;
-    parameter DLEN = 18;
+    parameter DLEN = 64;
 
 	// No need to adjust these parameters
 	localparam [5:0] LOOP = (6'd1 << LOOP_LOG2);
@@ -103,6 +103,7 @@ module top (
     wire [(DLEN*8)-1:0] received_data;
     wire data_valid, data_available;
     wire tx_busy;
+    reg write_enable = 0;
 
     mipi_rx #(.DLEN(DLEN))(
         .rx_pixel_clk(rx_pixel_clk),
@@ -132,11 +133,12 @@ module top (
         .my_mipi_rx_ULPS(mipi_rx_ULPS)
     );
     
-    mipi_tx #(.DLEN(DLEN))(
+    mipi_tx #(.DLEN(5))(
         .tx_pixel_clk(tx_pixel_clk),
         .tx_vga_clk(tx_vga_clk),
         .data_available(data_available),
         .pix_gen_data(received_data),
+        .write_enable(write_enable),
         .rst_n(rst_n),
         .led1(RxD),
         .busy(tx_busy),

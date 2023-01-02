@@ -7,8 +7,10 @@ module pixel_data_gen #(
     input[9:0] x,y,
     input tx_pixel_clk,
     input data_available,
+    input write_enable,
     
     output[63:0] pixel_value,
+    output reg pix_flag,
     output reg busy
 );
 
@@ -24,8 +26,11 @@ parameter EOD = 2'b10;
 
 integer k;
 reg[47:0] temp_val;
-reg ext, pix_flag, flag;
+reg ext, flag;
 reg[1:0] state;
+
+wire[31:0] dlen;
+assign dlen = pix_flag ? 5 : DLEN;
 
 always @(*) begin
     if (pix_flag) begin
@@ -46,9 +51,12 @@ always @(posedge tx_pixel_clk) begin
                 busy <= 1;
                 pix_flag <= 1;
             end
+            else if(write_enable) begin
+                state <= DATA;
+                busy <= 1;
+            end
         end
         DATA : begin
-            pix_flag <= 0;
             if (x < 1 && y < 2) begin
                 temp_val <= 64'h01000000FFEA;
                 k <= 0;
@@ -56,10 +64,10 @@ always @(posedge tx_pixel_clk) begin
             end
             else if (x < 3 && y < 2) temp_val <= {
                                                     PHL_ID,
-                                                    DLEN[7:0],
-                                                    DLEN[15:8],
-                                                    DLEN[23:16],
-                                                    DLEN[31:24],
+                                                    dlen[7:0],
+                                                    dlen[15:8],
+                                                    dlen[23:16],
+                                                    dlen[31:24],
                                                     DTYPE
                                                 };
             else if (ext) begin
@@ -89,6 +97,7 @@ always @(posedge tx_pixel_clk) begin
             end
             else if (x == activeVideo_h - 1 & y == activeVideo_v) begin
                 state <= EOD;
+                pix_flag <= 0;
                 temp_val <= 64'h00;
             end
             else begin
@@ -101,6 +110,7 @@ always @(posedge tx_pixel_clk) begin
         end
         default: begin
             busy <= 0;
+            pix_flag <= 0;
             state <= IDLE;
         end
     endcase
