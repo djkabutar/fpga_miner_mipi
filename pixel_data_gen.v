@@ -26,20 +26,18 @@ parameter EOD = 2'b10;
 
 integer k;
 reg[47:0] temp_val;
-reg ext, flag;
+reg ext;
+wire flag;
 reg[1:0] state;
 
-wire[31:0] dlen;
-assign dlen = pix_flag ? 5 : DLEN;
+// always @(*) begin
+//     if (pix_flag)
+//         flag <= 0;
+//     else
+//         flag <= data_available;
+// end
 
-always @(*) begin
-    if (pix_flag) begin
-        flag <= 0;
-    end
-    else if (data_available) begin
-        flag <= 1;
-    end
-end
+assign flag = pix_flag ? 0 : data_available;
 
 always @(posedge tx_pixel_clk) begin
 
@@ -64,10 +62,10 @@ always @(posedge tx_pixel_clk) begin
             end
             else if (x < 3 && y < 2) temp_val <= {
                                                     PHL_ID,
-                                                    dlen[7:0],
-                                                    dlen[15:8],
-                                                    dlen[23:16],
-                                                    dlen[31:24],
+                                                    DLEN[7:0],
+                                                    DLEN[15:8],
+                                                    DLEN[23:16],
+                                                    DLEN[31:24],
                                                     DTYPE
                                                 };
             else if (ext) begin

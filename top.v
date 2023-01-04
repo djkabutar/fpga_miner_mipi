@@ -84,6 +84,7 @@ module top (
 	// Valid range: [0, 5]
 	parameter LOOP_LOG2 = 5;
     parameter DLEN = 64;
+	reg [31:0] golden_nonce;
 
 	// No need to adjust these parameters
 	localparam [5:0] LOOP = (6'd1 << LOOP_LOG2);
@@ -133,7 +134,7 @@ module top (
         .my_mipi_rx_ULPS(mipi_rx_ULPS)
     );
     
-    mipi_tx #(.DLEN(5))(
+    mipi_tx #(.DLEN(4))(
         .tx_pixel_clk(tx_pixel_clk),
         .tx_vga_clk(tx_vga_clk),
         .data_available(data_available),
@@ -161,41 +162,41 @@ module top (
     );
 
 	//// 
-// 	reg [255:0] state = 0;
-// 	reg [511:0] data = 0;
-//     reg [31:0] 	    nonce = 32'h00000000;
+	reg [255:0] state = 0;
+	reg [511:0] data = 0;
+    reg [5:0] cnt_we = 0;
+    reg [31:0] 	    nonce = 32'h00000000;
 
 // 	//// Hashers
-// 	wire [255:0] hash, hash2;
-// 	reg [5:0] cnt = 6'd0;
-// 	reg feedback = 1'b0;
+	wire [255:0] hash, hash2;
+	reg [5:0] cnt = 6'd0;
+	reg feedback = 1'b0;
 
-// 	sha256_transform #(.LOOP(LOOP)) uut (
-// 		.clk(hash_clk),
-// 		.feedback(feedback),
-// 		.cnt(cnt),
-// 		.rx_state(state),
-// 		.rx_input(data),
-// 		.tx_hash(hash)
-// 	);
-// 	sha256_transform #(.LOOP(LOOP)) uut2 (
-// 		.clk(hash_clk),
-// 		.feedback(feedback),
-// 		.cnt(cnt),
-// 		.rx_state(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667),
-// 		.rx_input({256'h0000010000000000000000000000000000000000000000000000000080000000, hash}),
-// 		.tx_hash(hash2)
-// 	);
+	sha256_transform #(.LOOP(LOOP)) uut (
+		.clk(hash_clk),
+		.feedback(feedback),
+		.cnt(cnt),
+		.rx_state(state),
+		.rx_input(data),
+		.tx_hash(hash)
+	);
+	sha256_transform #(.LOOP(LOOP)) uut2 (
+		.clk(hash_clk),
+		.feedback(feedback),
+		.cnt(cnt),
+		.rx_state(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667),
+		.rx_input({256'h0000010000000000000000000000000000000000000000000000000080000000, hash}),
+		.tx_hash(hash2)
+	);
 
 
 // 	//// Virtual Wire Control
-// 	reg [255:0] midstate_buf = 0, data_buf = 0;
+	reg [255:0] midstate_buf = 0, data_buf = 0;
 // 	wire [255:0] midstate_vw, data2_vw;
    
 //    serial_receive serrx (.clk(hash_clk), .RxD(RxD), .midstate(midstate_vw), .data2(data2_vw));
    
 // 	//// Virtual Wire Output
-// 	reg [31:0] golden_nonce;
 //    reg 		   serial_send;
 //    wire 	   serial_busy;
 
@@ -203,56 +204,63 @@ module top (
    
 
 // 	//// Control Unit
-// 	reg is_golden_ticket = 1'b0;
-// 	reg feedback_d1 = 1'b1;
-// 	wire [5:0] cnt_next;
-// 	wire [31:0] nonce_next;
-// 	wire feedback_next;
-//     wire reset;
-//     assign reset = 1'b0;
+	reg is_golden_ticket = 1'b0;
+	reg feedback_d1 = 1'b1;
+	wire [5:0] cnt_next;
+	wire [31:0] nonce_next;
+	wire feedback_next;
+    wire reset;
+    assign reset = 1'b0;
 
-// 	assign cnt_next =  reset ? 6'd0 : (LOOP == 1) ? 6'd0 : (cnt + 6'd1) & (LOOP-1);
+	assign cnt_next =  reset ? 6'd0 : (LOOP == 1) ? 6'd0 : (cnt + 6'd1) & (LOOP-1);
 // 	// On the first count (cnt==0), load data from previous stage (no feedback)
 // 	// on 1..LOOP-1, take feedback from current stage
 // 	// This reduces the throughput by a factor of (LOOP), but also reduces the design size by the same amount
-// 	assign feedback_next = (LOOP == 1) ? 1'b0 : (cnt_next != {(LOOP_LOG2){1'b0}});
-// 	assign nonce_next =
-// 		reset ? 32'd0 :
-// 		feedback_next ? nonce : (nonce + 32'd1);
+	assign feedback_next = (LOOP == 1) ? 1'b0 : (cnt_next != {(LOOP_LOG2){1'b0}});
+	assign nonce_next =
+		reset ? 32'd0 :
+		feedback_next ? nonce : (nonce + 32'd1);
 
 	
-// 	always @ (posedge hash_clk)
-// 	begin
-//         midstate_buf <= midstate_vw;
-//         data_buf <= data2_vw;
+	always @ (posedge hash_clk)
+	begin
+        if (data_available | tx_busy) begin
+            midstate_buf <= received_data[511:256];
+            data_buf <= received_data[255:0];
+        end
 
-// 		cnt <= cnt_next;
-// 		feedback <= feedback_next;
-// 		feedback_d1 <= feedback;
+		cnt <= cnt_next;
+		feedback <= feedback_next;
+		feedback_d1 <= feedback;
 
-// 		// Give new data to the hasher
-// 		state <= midstate_buf;
-// 		data <= {384'h000002800000000000000000000000000000000000000000000000000000000000000000000000000000000080000000, nonce_next, data_buf[95:0]};
-// 		nonce <= nonce_next;
+		// Give new data to the hasher
+		state <= midstate_buf;
+		data <= {384'h000002800000000000000000000000000000000000000000000000000000000000000000000000000000000080000000, nonce_next, data_buf[95:0]};
+		nonce <= nonce_next;
 
 
-// 		// Check to see if the last hash generated is valid.
-// 		is_golden_ticket <= (hash2[255:224] == 32'h00000000) && !feedback_d1;
-// 		if(is_golden_ticket)
-// 		begin
-// 			// TODO: Find a more compact calculation for this
-// 			if (LOOP == 1)
-// 				golden_nonce <= nonce - 32'd131;
-// 			else if (LOOP == 2)
-// 				golden_nonce <= nonce - 32'd66;
-// 			else
-// 				golden_nonce <= nonce - GOLDEN_NONCE_OFFSET;
+		// Check to see if the last hash generated is valid.
+		is_golden_ticket <= (hash2[255:224] == 32'h00000000) && !feedback_d1;
+		if(is_golden_ticket)
+		begin
+			// TODO: Find a more compact calculation for this
+			if (LOOP == 1)
+				golden_nonce <= nonce - 32'd131;
+			else if (LOOP == 2)
+				golden_nonce <= nonce - 32'd66;
+			else
+				golden_nonce <= nonce - GOLDEN_NONCE_OFFSET;
 
-// 		   if (!serial_busy) serial_send <= 1;
-// 		end // if (is_golden_ticket)
-// 		else
-// 		  serial_send <= 0;
-// 	end
+		    // if (!tx_busy) begin
+            write_enable <= 1;
+            cnt_we <= 0;
+            // end
+		end // if (is_golden_ticket)
+		else if(cnt_we[5])
+            write_enable <= 0;
+        else
+            cnt_we <= cnt_we + 1;
+	end
 
    // die debuggenlichten
 

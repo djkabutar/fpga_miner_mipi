@@ -180,7 +180,7 @@ pixel_data_gen #(.DLEN(DLEN),
     .activeVideo_h(activeVideo_h),
     .activeVideo_v(activeVideo_v)
 ) (
-    .data(send_confirmation ? "dilav": pix_gen_data),
+    .data(send_confirmation ? "yako": pix_gen_data),
     .x(x),
     .y(y),
     .pix_flag(send_confirmation),
