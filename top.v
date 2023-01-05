@@ -82,7 +82,7 @@ module top (
 	// And so on.
 	//
 	// Valid range: [0, 5]
-	parameter LOOP_LOG2 = 5;
+	parameter LOOP_LOG2 = 1;
     parameter DLEN = 48;
 	reg [31:0] golden_nonce;
 
