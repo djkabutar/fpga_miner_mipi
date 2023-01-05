@@ -83,7 +83,7 @@ module top (
 	//
 	// Valid range: [0, 5]
 	parameter LOOP_LOG2 = 5;
-    parameter DLEN = 64;
+    parameter DLEN = 48;
 	reg [31:0] golden_nonce;
 
 	// No need to adjust these parameters
@@ -225,8 +225,8 @@ module top (
 	always @ (posedge hash_clk)
 	begin
         if (data_available | tx_busy) begin
-            midstate_buf <= received_data[511:256];
-            data_buf <= received_data[255:0];
+            midstate_buf <= received_data[383:128];
+            data_buf <= received_data[127:0];
         end
 
 		cnt <= cnt_next;
