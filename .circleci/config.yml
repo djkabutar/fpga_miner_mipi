@@ -1,6 +1,6 @@
 version: 2.1
 jobs:
-  alioth:
+  dj:
    docker:
       - image: ubuntu:stable
    steps:
