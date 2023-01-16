@@ -3,7 +3,6 @@ module verify_mipi_receiver #(DLEN = 6)(
     input rx_pixel_clk,
     input my_mipi_rx_VALID,
     output reg [(DLEN*8)-1:0] data,
-    output reg data_valid,
     output reg data_available
 );
 
@@ -20,13 +19,22 @@ reg[7:0] dtype, phl_id;
 reg packet_id_received, dlen_received;
 reg[31:0] k, dlen;
 reg[1:0] state;
+reg[4:0] cnt;
 // reg[511:0] data_value;
+initial begin
+    data_available <= 0;
+end
 
 always @(posedge rx_pixel_clk) begin
     case (state)
         IDLE : begin
-            data_available <= 0;
+            // data_available <= 0;
             k <= 0;
+            
+            if (cnt[4])
+                data_available <= 0;
+            else
+                cnt <= cnt + 1;
 
             if (packet[47:24] == SOF) begin
                 state <= START;
@@ -72,8 +80,8 @@ always @(posedge rx_pixel_clk) begin
             else if (k >= dlen) begin
                 // data <= (data << 48) | packet[47:0];
                 data_available <= 1;
-                data_valid <= 1;
                 state <= IDLE;
+                cnt <= 0;
             end
             // else begin
             // end

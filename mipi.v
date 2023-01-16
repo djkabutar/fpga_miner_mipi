@@ -3,7 +3,7 @@ module mipi_rx #(parameter DLEN = 6)(
     input         rst_n,
     input         uart_clk,
     input         tx_busy,
-    output        led,
+    // output        led,
     output        uart_inst,
 
 /* Signals used by the MIPI RX Interface Designer instance */
@@ -25,7 +25,6 @@ module mipi_rx #(parameter DLEN = 6)(
 	input [3:0]   my_mipi_rx_ULPS,
 
     output [(DLEN*8)-1:0] data,
-    output        data_valid,
     output        data_available
 );
 
@@ -77,7 +76,6 @@ verify_mipi_receiver #(.DLEN(DLEN))(
     .rx_pixel_clk(rx_pixel_clk),
     .data(data),
     .my_mipi_rx_VALID(my_mipi_rx_VALID),
-    .data_valid(data_valid),
     .data_available(data_available)
 );
 
@@ -89,7 +87,7 @@ udg udg_inst(
 	.tx(uart_inst)
 );
 
-assign led = data_available;
+// assign led = data_available;
 
 endmodule
 
@@ -103,6 +101,7 @@ module mipi_tx #(parameter DLEN = 512)(
     input         rst_n,
     output        busy,
     output        led1,
+    output        led2,
 
 /* Signals used by the MIPI TX Interface Designer instance */
 	    
@@ -174,16 +173,15 @@ wire [63:0] pixel_data;
 // reg [(DLEN*8)-1:0] pix_gen_data = "god yzal eht revo spmuj xof nworb kciuq eht";
 // wire busy;
 reg [26:0] cnt;
-wire send_confirmation;
 
 pixel_data_gen #(.DLEN(DLEN),
     .activeVideo_h(activeVideo_h),
     .activeVideo_v(activeVideo_v)
-) (
-    .data(send_confirmation ? "yako": pix_gen_data),
+) pix_gen (
+    .data(pix_gen_data),
     .x(x),
     .y(y),
-    .pix_flag(send_confirmation),
+    .led2(led2),
     .data_available(data_available),
     .busy(busy),
     .write_enable(write_enable),
@@ -197,8 +195,8 @@ pixel_data_gen #(.DLEN(DLEN),
                    // (x == 4 && y == 0) ? 64'h43484152AADD : 64'h000000000000;
 assign led1 = busy;
                     
-assign my_mipi_tx_DPHY_RSTN = data_available | busy;
-assign my_mipi_tx_RSTN = data_available | busy;
+assign my_mipi_tx_DPHY_RSTN = data_available | busy | write_enable;
+assign my_mipi_tx_RSTN = data_available | busy | write_enable;
 assign my_mipi_tx_VALID = valid_h_patgen;
 assign my_mipi_tx_HSYNC = hsync_patgen;//hsync_patgen_PC;
 assign my_mipi_tx_VSYNC = vsync_patgen;//vsync_patgen_PC;
