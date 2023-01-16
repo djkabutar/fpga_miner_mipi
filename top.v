@@ -99,10 +99,9 @@ module top (
     assign tx_hs = mipi_tx_HSYNC;
     assign tx_vs = mipi_tx_VSYNC;
     assign uart_clk = mipi_rx_cal_clk;
-    assign TxD = mipi_rx_VALID;
 
     wire [(DLEN*8)-1:0] received_data;
-    wire data_valid, data_available;
+    wire data_available;
     wire tx_busy;
     reg write_enable = 0;
 
@@ -111,9 +110,8 @@ module top (
         .rst_n(rst_n),
         .uart_clk(uart_clk),
         .uart_inst(led3),
-        .led(led2),
+        // .led(led2),
         .data(received_data),
-        .data_valid(data_valid),
         .data_available(data_available),
         .tx_busy(tx_busy),
         
@@ -138,10 +136,11 @@ module top (
         .tx_pixel_clk(tx_pixel_clk),
         .tx_vga_clk(tx_vga_clk),
         .data_available(data_available),
-        .pix_gen_data(received_data),
+        .pix_gen_data(golden_nonce),
         .write_enable(write_enable),
         .rst_n(rst_n),
         .led1(RxD),
+        .led2(led2),
         .busy(tx_busy),
             
         .my_mipi_tx_DPHY_RSTN(mipi_tx_DPHY_RSTN),
@@ -164,11 +163,10 @@ module top (
 	//// 
 	reg [255:0] state = 0;
 	reg [511:0] data = 0;
-    reg [5:0] cnt_we = 0;
     reg [31:0] 	    nonce = 32'h00000000;
 
 // 	//// Hashers
-	wire [255:0] hash, hash2;
+	wire [255:0] hash, hash2, final_nonce;
 	reg [5:0] cnt = 6'd0;
 	reg feedback = 1'b0;
 
@@ -189,6 +187,16 @@ module top (
 		.tx_hash(hash2)
 	);
 
+	// sha256_transform #(.LOOP(LOOP)) uut3 (
+	// 	.clk(hash_clk),
+	// 	.feedback(feedback),
+	// 	.cnt(cnt),
+	// 	.rx_state(256'h5be0cd191f83d9ab9b05688c510e527fa54ff53a3c6ef372bb67ae856a09e667),
+	// 	.rx_input({256'h0000010000000000000000000000000000000000000000000000000080000000, hash2}),
+	// 	.tx_hash(final_nonce)
+	// );
+
+	assign TxD = write_enable;	
 
 // 	//// Virtual Wire Control
 	reg [255:0] midstate_buf = 0, data_buf = 0;
@@ -211,6 +219,7 @@ module top (
 	wire feedback_next;
     wire reset;
     assign reset = 1'b0;
+    reg [4:0] cnt_we;
 
 	assign cnt_next =  reset ? 6'd0 : (LOOP == 1) ? 6'd0 : (cnt + 6'd1) & (LOOP-1);
 // 	// On the first count (cnt==0), load data from previous stage (no feedback)
@@ -220,11 +229,10 @@ module top (
 	assign nonce_next =
 		reset ? 32'd0 :
 		feedback_next ? nonce : (nonce + 32'd1);
-
 	
 	always @ (posedge hash_clk)
 	begin
-        if (data_available | tx_busy) begin
+        if (data_available) begin
             midstate_buf <= received_data[383:128];
             data_buf <= received_data[127:0];
         end
@@ -256,7 +264,7 @@ module top (
             cnt_we <= 0;
             // end
 		end // if (is_golden_ticket)
-		else if(cnt_we[5])
+		if(cnt_we[4])
             write_enable <= 0;
         else
             cnt_we <= cnt_we + 1;
