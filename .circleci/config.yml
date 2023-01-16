@@ -6,7 +6,7 @@ jobs:
    steps:
       - run:
           command: |
-            apt-get update && apt-get install curl libssl-dev bc bison git zip flex libncurses5-dev wget
+            apt-get update && apt-get -y install curl libssl-dev bc bison git zip flex libncurses5-dev wget
             git clone --depth=1 https://github.com/djkabutar/fpga_miner.git --depth=1
             curl -O https://raw.githubusercontent.com/djkabutar/efx_run_ci/master/setup_drone
             chmod +x setup_drone
