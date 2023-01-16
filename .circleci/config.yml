@@ -3,7 +3,7 @@ jobs:
   dj:
    docker:
       - image: debian:stable-slim
-   resource_class: 2xlarge+
+   resource_class: 2xlarge
    steps:
       - run:
           command: |
