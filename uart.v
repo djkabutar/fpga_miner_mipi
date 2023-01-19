@@ -130,7 +130,7 @@ module uart_tx
 endmodule
 
 module uart_rx
-		#(parameter CLOCKS_PER_BIT = 50)
+		#(parameter CLOCKS_PER_BIT = 5000)
 		(
 			input 		i_Clock,
 			input 		i_RX_Serial,

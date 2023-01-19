@@ -20,10 +20,10 @@ reg packet_id_received, dlen_received;
 reg[31:0] k, dlen;
 reg[1:0] state;
 reg[4:0] cnt;
+
+wire[4:0] cnt_next;
+assign cnt_next = cnt + 1'b1;
 // reg[511:0] data_value;
-initial begin
-    data_available <= 0;
-end
 
 always @(posedge rx_pixel_clk) begin
     case (state)
@@ -34,7 +34,7 @@ always @(posedge rx_pixel_clk) begin
             if (cnt[4])
                 data_available <= 0;
             else
-                cnt <= cnt + 1;
+                cnt <= cnt_next;
 
             if (packet[47:24] == SOF) begin
                 state <= START;
