@@ -25,7 +25,7 @@ module fifo (
  
 
    parameter DATA_WIDTH = 8;
-   parameter ADDR_WIDTH = 24;
+   parameter ADDR_WIDTH = 8;
    parameter RAM_DEPTH = (1 << ADDR_WIDTH);
 
    input clk;

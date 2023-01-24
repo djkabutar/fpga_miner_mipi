@@ -204,7 +204,7 @@ fifo #(.DATA_WIDTH(64),
     .full(full)
 );    
 
-uart_tx uart_transmit(
+uart_tx uart_core(
     .i_Rst_L(rst),
     .i_Clock(clk),
     .i_TX_DV(uart_tx_en) ,

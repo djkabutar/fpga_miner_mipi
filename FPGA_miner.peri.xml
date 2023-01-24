@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<efxpt:design_db name="FPGA_miner" device_def="T85F324" location="D:\VeggProjects\FPGA Examples\FPGA_Miner" version="2021.2.323" db_version="20212999" last_change_date="Sat Jan 14 23:21:45 2023" xmlns:efxpt="http://www.efinixinc.com/peri_design_db" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.efinixinc.com/peri_design_db peri_design_db.xsd ">
+<efxpt:design_db name="FPGA_miner" device_def="T85F324" location="D:\VeggProjects\FPGA Examples\FPGA_Miner" version="2021.2.323" db_version="20212999" last_change_date="Sun Jan 22 22:54:39 2023" xmlns:efxpt="http://www.efinixinc.com/peri_design_db" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.efinixinc.com/peri_design_db peri_design_db.xsd ">
     <efxpt:device_info>
         <efxpt:iobank_info>
             <efxpt:iobank name="1A" iostd="3.3 V LVTTL / LVCMOS"/>
@@ -58,19 +58,18 @@
         <efxpt:global_unused_config state="input with weak pullup"/>
     </efxpt:gpio_info>
     <efxpt:pll_info>
-        <efxpt:pll name="input_clk" pll_def="PLL_BR2" ref_clock_name="" ref_clock_freq="10.00" multiplier="160" pre_divider="1" post_divider="8" reset_name="" locked_name="" is_ipfrz="false" is_bypass_lock="true">
-            <efxpt:output_clock name="hash_clk" number="1" out_divider="2" adv_out_phase_shift="0"/>
+        <efxpt:pll name="input_clk" pll_def="PLL_TR0" ref_clock_name="" ref_clock_freq="74.25" multiplier="101" pre_divider="5" post_divider="1" reset_name="" locked_name="" is_ipfrz="false" is_bypass_lock="true">
+            <efxpt:output_clock name="rx_pixel_clk" number="1" out_divider="75" adv_out_phase_shift="0"/>
             <efxpt:adv_prop ref_clock_mode="external" ref_clock1_name="" ext_ref_clock_id="2" clksel_name="" feedback_clock_name="" feedback_mode="internal"/>
         </efxpt:pll>
-        <efxpt:pll name="mipi_rx" pll_def="PLL_TR1" ref_clock_name="" ref_clock_freq="20.00" multiplier="65" pre_divider="1" post_divider="1" reset_name="" locked_name="" is_ipfrz="false" is_bypass_lock="true">
-            <efxpt:output_clock name="mipi_rx_cal_clk" number="0" out_divider="13" adv_out_phase_shift="0"/>
-            <efxpt:output_clock name="rx_pixel_clk" number="1" out_divider="24" adv_out_phase_shift="0"/>
+        <efxpt:pll name="mipi_rx" pll_def="PLL_TR1" ref_clock_name="" ref_clock_freq="20.00" multiplier="80" pre_divider="1" post_divider="8" reset_name="" locked_name="" is_ipfrz="false" is_bypass_lock="true">
+            <efxpt:output_clock name="mipi_rx_cal_clk" number="0" out_divider="2" adv_out_phase_shift="0"/>
             <efxpt:adv_prop ref_clock_mode="external" ref_clock1_name="" ext_ref_clock_id="2" clksel_name="" feedback_clock_name="" feedback_mode="internal"/>
         </efxpt:pll>
-        <efxpt:pll name="mipi_tx" pll_def="PLL_TR0" ref_clock_name="" ref_clock_freq="74.25" multiplier="95" pre_divider="7" post_divider="4" reset_name="" locked_name="" is_ipfrz="false" is_bypass_lock="true">
-            <efxpt:output_clock name="mipi_tx_esc_CLKOUT0" number="0" out_divider="21" adv_out_phase_shift="0"/>
-            <efxpt:output_clock name="tx_pixel_clk" number="1" out_divider="20" adv_out_phase_shift="0"/>
-            <efxpt:output_clock name="tx_vga_clk" number="2" out_divider="10" adv_out_phase_shift="0"/>
+        <efxpt:pll name="mipi_tx" pll_def="PLL_BR2" ref_clock_name="" ref_clock_freq="10.00" multiplier="126" pre_divider="1" post_divider="1" reset_name="" locked_name="" is_ipfrz="false" is_bypass_lock="true">
+            <efxpt:output_clock name="mipi_tx_esc_CLKOUT0" number="0" out_divider="105" adv_out_phase_shift="0"/>
+            <efxpt:output_clock name="tx_pixel_clk" number="1" out_divider="100" adv_out_phase_shift="0"/>
+            <efxpt:output_clock name="tx_vga_clk" number="2" out_divider="50" adv_out_phase_shift="0"/>
             <efxpt:adv_prop ref_clock_mode="external" ref_clock1_name="" ext_ref_clock_id="2" clksel_name="" feedback_clock_name="" feedback_mode="internal"/>
         </efxpt:pll>
     </efxpt:pll_info>

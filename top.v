@@ -20,8 +20,6 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 module top (
-    input hash_clk,
-    
     input         tx_pixel_clk,
     input         tx_vga_clk,
     input         rst_n,
@@ -85,6 +83,7 @@ module top (
 	parameter LOOP_LOG2 = 1;
     parameter DLEN = 48;
 	reg [31:0] golden_nonce;
+	wire hash_clk;
 
 	// No need to adjust these parameters
 	localparam [5:0] LOOP = (6'd1 << LOOP_LOG2);
@@ -99,18 +98,24 @@ module top (
     assign tx_hs = mipi_tx_HSYNC;
     assign tx_vs = mipi_tx_VSYNC;
     assign uart_clk = mipi_rx_cal_clk;
+	assign hash_clk = uart_clk;
 
     wire [(DLEN*8)-1:0] received_data;
     wire data_available;
     wire tx_busy;
-    reg write_enable = 0;
+	wire send_data;
+	wire[31:0] tx_data;
+    reg write_enable;
 
-    mipi_rx #(.DLEN(DLEN))(
+	assign send_data = data_available | write_enable;
+	assign tx_data = write_enable ? golden_nonce : "yako";
+
+    mipi_rx #(.DLEN(DLEN)) mipi_receive(
         .rx_pixel_clk(rx_pixel_clk),
         .rst_n(rst_n),
         .uart_clk(uart_clk),
         .uart_inst(led3),
-        // .led(led2),
+        .led(led2),
         .data(received_data),
         .data_available(data_available),
         .tx_busy(tx_busy),
@@ -132,15 +137,14 @@ module top (
         .my_mipi_rx_ULPS(mipi_rx_ULPS)
     );
     
-    mipi_tx #(.DLEN(4))(
+    mipi_tx #(.DLEN(4)) mipi_transmit (
         .tx_pixel_clk(tx_pixel_clk),
         .tx_vga_clk(tx_vga_clk),
-        .data_available(data_available),
-        .pix_gen_data(golden_nonce),
-        .write_enable(write_enable),
+        .data_available(send_data),
+        .pix_gen_data(tx_data),
+        // .write_enable(write_enable),
         .rst_n(rst_n),
         .led1(RxD),
-        .led2(led2),
         .busy(tx_busy),
             
         .my_mipi_tx_DPHY_RSTN(mipi_tx_DPHY_RSTN),
@@ -196,7 +200,7 @@ module top (
 	// 	.tx_hash(final_nonce)
 	// );
 
-	assign TxD = write_enable;	
+	assign TxD = is_golden_ticket;	
 
 // 	//// Virtual Wire Control
 	reg [255:0] midstate_buf = 0, data_buf = 0;
@@ -219,7 +223,7 @@ module top (
 	wire feedback_next;
     wire reset;
     assign reset = 1'b0;
-    reg [4:0] cnt_we;
+    reg [24:0] cnt_we;
 
 	assign cnt_next =  reset ? 6'd0 : (LOOP == 1) ? 6'd0 : (cnt + 6'd1) & (LOOP-1);
 // 	// On the first count (cnt==0), load data from previous stage (no feedback)
@@ -264,7 +268,7 @@ module top (
             cnt_we <= 0;
             // end
 		end // if (is_golden_ticket)
-		if(cnt_we[4])
+		else if(cnt_we[24])
             write_enable <= 0;
         else
             cnt_we <= cnt_we + 1;

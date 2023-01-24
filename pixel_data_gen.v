@@ -7,9 +7,8 @@ module pixel_data_gen #(
     input[9:0] x,y,
     input tx_pixel_clk,
     input data_available,
-    input write_enable,
+    // input write_enable,
     
-    output led2,
     output[63:0] pixel_value,
     output reg busy
 );
@@ -43,7 +42,6 @@ reg[1:0] state;
 // assign flag = pix_flag ? 0 : data_available;
 // assign we_flag = we_d ? 0 : (write_enable | we_flag);
 // assign we_flag = write_enable;
-assign led2 = write_enable;
 
 always @(posedge tx_pixel_clk) begin
 
@@ -53,15 +51,14 @@ always @(posedge tx_pixel_clk) begin
             if (data_available) begin
                 state <= DATA;
                 busy <= 1;
-                pix_gen_data <= "yako";
-                // pix_flag <= 1;
-            end
-            if(write_enable) begin
-                state <= DATA;
-                busy <= 1;
                 pix_gen_data <= data;
-                // we_d <= 1;
             end
+            // if(write_enable) begin
+            //     state <= DATA;
+            //     busy <= 1;
+            //     pix_gen_data <= data;
+            //     // we_d <= 1;
+            // end
         end
         // DUMB: begin
         //     state <= DATA;
@@ -72,7 +69,7 @@ always @(posedge tx_pixel_clk) begin
                 k <= 0;
                 ext <= 0;
             end
-            if (x < 3 && y < 2) temp_val <= {
+            else if (x < 3 && y < 2) temp_val <= {
                                                     PHL_ID,
                                                     DLEN[7:0],
                                                     DLEN[15:8],
@@ -116,12 +113,12 @@ always @(posedge tx_pixel_clk) begin
         end
         EOD: begin
             busy <= 0;
-            // pix_flag <= 0;
+            pix_flag <= 0;
             state <= IDLE;
         end
         default: begin
             busy <= 0;
-            // pix_flag <= 0;
+            pix_flag <= 0;
             // we_d <= 0;
             state <= IDLE;
         end

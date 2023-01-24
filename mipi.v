@@ -3,7 +3,7 @@ module mipi_rx #(parameter DLEN = 6)(
     input         rst_n,
     input         uart_clk,
     input         tx_busy,
-    // output        led,
+    output        led,
     output        uart_inst,
 
 /* Signals used by the MIPI RX Interface Designer instance */
@@ -31,10 +31,10 @@ module mipi_rx #(parameter DLEN = 6)(
 assign my_mipi_rx_DPHY_RSTN = 1'b1;
 assign my_mipi_rx_RSTN = 1'b1;
 assign my_mipi_rx_CLEAR = 1'b0;
-assign my_mipi_rx_LANES = 2'b11;         // 4 lanes
+assign my_mipi_rx_LANES = 2'b01;         // 4 lanes
 assign my_mipi_rx_VC_ENA = 4'b0001;      // Virtual Channel enable
 
-reg [15:0] cnt;
+reg [4:0] cnt;
 reg state;
 
 // always @(posedge rx_pixel_clk) begin
@@ -71,10 +71,11 @@ reg state;
 //     // else data_available <= 1'b0;
 // end
 
-verify_mipi_receiver #(.DLEN(DLEN))(
+verify_mipi_receiver #(.DLEN(DLEN)) data_get(
     .packet(my_mipi_rx_DATA[47:0]),
     .rx_pixel_clk(rx_pixel_clk),
     .data(data),
+    .receiving(led),
     .my_mipi_rx_VALID(my_mipi_rx_VALID),
     .data_available(data_available)
 );
@@ -87,8 +88,6 @@ udg udg_inst(
 	.tx(uart_inst)
 );
 
-// assign led = data_available;
-
 endmodule
 
 
@@ -96,12 +95,11 @@ module mipi_tx #(parameter DLEN = 512)(
     input         tx_pixel_clk,
     input         tx_vga_clk,
     input         data_available,
-    input         write_enable,
+    // input         write_enable,
     input[(DLEN*8)-1:0] pix_gen_data,
     input         rst_n,
     output        busy,
     output        led1,
-    output        led2,
 
 /* Signals used by the MIPI TX Interface Designer instance */
 	    
@@ -181,10 +179,9 @@ pixel_data_gen #(.DLEN(DLEN),
     .data(pix_gen_data),
     .x(x),
     .y(y),
-    .led2(led2),
     .data_available(data_available),
     .busy(busy),
-    .write_enable(write_enable),
+    // .write_enable(write_enable),
     .tx_pixel_clk(tx_pixel_clk),
     .pixel_value(pixel_data)
 );
@@ -195,8 +192,8 @@ pixel_data_gen #(.DLEN(DLEN),
                    // (x == 4 && y == 0) ? 64'h43484152AADD : 64'h000000000000;
 assign led1 = busy;
                     
-assign my_mipi_tx_DPHY_RSTN = data_available | busy | write_enable;
-assign my_mipi_tx_RSTN = data_available | busy | write_enable;
+assign my_mipi_tx_DPHY_RSTN = data_available | busy;
+assign my_mipi_tx_RSTN = data_available | busy;
 assign my_mipi_tx_VALID = valid_h_patgen;
 assign my_mipi_tx_HSYNC = hsync_patgen;//hsync_patgen_PC;
 assign my_mipi_tx_VSYNC = vsync_patgen;//vsync_patgen_PC;
