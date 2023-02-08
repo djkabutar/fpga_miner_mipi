@@ -13,6 +13,7 @@ parameter SOF = 24'hEAFF99;
 localparam IDLE = 2'b00;
 localparam START = 2'b01;
 localparam DATA = 2'b10; 
+localparam WAIT = 2'b11;
 
 reg[23:0] pkt_id;
 reg[7:0] dtype, phl_id;
@@ -22,7 +23,7 @@ reg[4:0] cnt;
 
 wire[4:0] cnt_next;
 // assign cnt_next = cnt + 1'b1;
-// reg[511:0] data_value;
+
 initial begin
     cnt = 0;
     data_available = 0;
@@ -41,23 +42,32 @@ always @(posedge rx_pixel_clk) begin
             else
                 cnt <= cnt + 1'b1;
 
-            if (packet[47:24] == SOF
-                | packet[47:24] == 24'h99FFEA
-                | packet[23:0] == SOF
-                | packet[23:0] == 24'h99FFEA) begin
-                state <= START;
+            // if (packet[47:24] == SOF
+            //     | packet[47:24] == 24'h99FFEA
+            //     | packet[23:0] == SOF
+            //     | packet[23:0] == 24'h99FFEA) begin
+            if (packet[47:0] == {SOF, SOF}) begin
+                state <= WAIT;
                 receiving <= 1;
                 // data_valid <= 0;
                 // pkt_id[7:0] <= packet[23:16];
                 // pkt_id[15:8] <= packet[15:8];
                 // pkt_id[23:16] <= packet[7:0];
-                pkt_id <= packet[23:0];
+                // pkt_id <= packet[23:0];
             end
             // else begin
             //     state <= IDLE;
             //     data_valid <= 0;
             // end
             // state <= START;
+        end
+        WAIT: begin
+            if (packet[47:0] == {SOF, SOF}) begin
+                state <= WAIT;
+            end
+            else begin
+                state <= START;
+            end
         end
         START : begin
             state <= DATA;

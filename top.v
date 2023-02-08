@@ -80,7 +80,7 @@ module top (
 	// And so on.
 	//
 	// Valid range: [0, 5]
-	parameter LOOP_LOG2 = 1;
+	parameter LOOP_LOG2 = 5;
     parameter DLEN = 48;
 	reg [31:0] golden_nonce;
 	wire hash_clk;
@@ -200,7 +200,7 @@ module top (
 	// 	.tx_hash(final_nonce)
 	// );
 
-	assign TxD = is_golden_ticket;	
+	assign TxD = write_enable;	
 
 // 	//// Virtual Wire Control
 	reg [255:0] midstate_buf = 0, data_buf = 0;
